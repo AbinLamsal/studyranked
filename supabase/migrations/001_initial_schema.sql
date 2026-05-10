@@ -69,6 +69,11 @@ create policy "profiles_update_own"
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
+-- Profiles: allow users to insert their own row (needed when trigger misses signup)
+create policy "profiles_insert_own"
+  on public.profiles for insert
+  with check (auth.uid() = id);
+
 -- Sessions: users can only read/write their own sessions
 create policy "sessions_select_own"
   on public.sessions for select

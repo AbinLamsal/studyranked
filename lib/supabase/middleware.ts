@@ -43,7 +43,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isAuthRoute && user) {
+  if (user && (isAuthRoute || pathname.startsWith("/onboarding"))) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("rank_tier")

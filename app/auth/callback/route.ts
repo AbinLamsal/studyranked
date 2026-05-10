@@ -1,5 +1,4 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -7,7 +6,10 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   if (code) {
-    const cookieStore = cookies();
+    // Collect cookies to apply — we need to set them on the redirect response
+    // with full options (maxAge, sameSite, etc.) which would be lost if we used
+    // cookieStore.set() from next/headers and then created a new response.
+    const pendingCookies: { name: string; value: string; options: Record<string, unknown> }[] = [];
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,12 +17,10 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll();
+            return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
+            cookiesToSet.forEach((c) => pendingCookies.push(c));
           },
         },
       }
@@ -38,15 +38,14 @@ export async function GET(request: Request) {
           .from("profiles")
           .select("rank_tier")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         const destination = profile?.rank_tier ? "/home" : "/onboarding";
         const response = NextResponse.redirect(`${origin}${destination}`);
 
-        // Copy all cookies onto the redirect response
-        cookieStore.getAll().forEach(({ name, value }) => {
-          response.cookies.set(name, value, { path: "/" });
-        });
+        pendingCookies.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+        );
 
         return response;
       }
