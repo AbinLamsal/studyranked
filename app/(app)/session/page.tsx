@@ -137,7 +137,8 @@ export default function SessionPage() {
   const launchingRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const faceapiRef = useRef<any>(null);       // imported @vladmandic/face-api module
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const faceapiRef = useRef<any>(null);
   const faceMeshReadyRef = useRef(false);     // true once models are loaded
   const animFrameRef = useRef<number>(0);
   const mountedRef = useRef(true);
@@ -191,7 +192,9 @@ export default function SessionPage() {
         const faceapi = await import("@vladmandic/face-api");
         log("imported");
         // CPU backend skips WebGL shader compilation (~3s saved on first load)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (faceapi as any).tf.setBackend("cpu");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (faceapi as any).tf.ready();
         log("CPU backend ready");
         await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
